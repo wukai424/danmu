@@ -224,7 +224,7 @@ export default class BilibiliSource extends BaseSource {
 		  org_title: cleanedOrgTitle,
           type: mediaType,
           year,
-          imageUrl: item.cover || null,
+          imageUrl: item.cover || item.pic || null,
           episodeCount
         };
 
@@ -306,6 +306,7 @@ export default class BilibiliSource extends BaseSource {
       // 执行并行网络搜索任务
       const t1 = this._searchByType(keyword, "media_bangumi", mixinKey);
       const t2 = this._searchByType(keyword, "media_ft", mixinKey);
+      const tv = this._searchByType(keyword, "video", mixinKey);
 
       let t3 = Promise.resolve([]);
       if (this._hasBilibiliProxy()) {
@@ -314,8 +315,9 @@ export default class BilibiliSource extends BaseSource {
         t3 = this._searchOversea(keyword, localOverseas.length > 0);
       }
 
-      // 等待所有网络请求完成
-      let networkResults = (await Promise.all([t1, t2, t3])).flat();
+      // 等待所有网络请求完成（番剧/影视结果优先排在前面）
+      const [bangumiResults, ftResults, videoResults, overseaResults] = await Promise.all([t1, t2, tv, t3]);
+      let networkResults = [...bangumiResults, ...ftResults, ...videoResults, ...overseaResults];
 
       const finalResults = [];
       const seenIds = new Set();
