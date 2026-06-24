@@ -1749,12 +1749,23 @@ function buildBangumiData(anime, idParam = "") {
   let episodesList = [];
   for (let i = 0; i < anime.links.length; i++) {
     const link = anime.links[i];
+    // 尝试从缓存获取弹幕数量（不触发网络请求）
+    let danmakuCount = 0;
+    try {
+      const cachedComments = getCommentCache(link.url);
+      if (cachedComments !== null && Array.isArray(cachedComments)) {
+        danmakuCount = cachedComments.length;
+      }
+    } catch (e) {
+      // 缓存获取失败不影响返回
+    }
     episodesList.push({
       seasonId: `season-${anime.animeId}`,
       episodeId: link.id,
       episodeTitle: `${link.title}`,
       episodeNumber: `${i+1}`,
       airDate: anime.startDate,
+      danmakuCount: danmakuCount,
     });
   }
 
